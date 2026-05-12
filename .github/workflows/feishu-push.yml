@@ -2,12 +2,12 @@ name: Feishu News Push
 
 on:
   schedule:
-    # 每5分钟运行一次
     - cron: '*/5 * * * *'
   workflow_dispatch:
 
 permissions:
   contents: write
+  actions: write
 
 jobs:
   push-news:
@@ -16,8 +16,6 @@ jobs:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-python@v5
-        env:
-          FORCE_JAVASCRIPT_ACTIONS_TO_NODE20: true
         with:
           python-version: '3.11'
 
@@ -38,3 +36,11 @@ jobs:
           git add push_state.json
           git diff --staged --quiet || git commit -m "Update push state $(date -u +%Y-%m-%dT%H:%M)"
           git push
+
+      - name: Schedule next run
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          sleep 280
+          gh workflow run feishu-push.yml
