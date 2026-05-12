@@ -1,0 +1,38 @@
+name: Feishu News Push
+
+on:
+  schedule:
+    # 每5分钟运行一次
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  push-news:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Run push script
+        env:
+          FEISHU_WEBHOOK_URL: ${{ secrets.FEISHU_WEBHOOK_URL }}
+          FILTER_MODE: all
+          FETCH_NUMBER: 20
+          NIGHT_SILENCE: true
+          GITHUB_CACHE_PATH: push_state.json
+        run: python aigupiao_feishu_push.py --once
+
+      - name: Commit push state
+        if: always()
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add push_state.json
+          git diff --staged --quiet || git commit -m "Update push state $(date -u +%Y-%m-%dT%H:%M)"
+          git push
