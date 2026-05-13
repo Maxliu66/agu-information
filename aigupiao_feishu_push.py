@@ -347,8 +347,19 @@ def run():
     important_items = filter_important_news(all_items, FILTER_MODE)
     print(f"  过滤后 {len(important_items)} 条要闻（模式: {FILTER_MODE}）")
 
-    # 增量去重：只推送新出现的
-    new_items = [item for item in important_items if item.get("id") not in pushed_ids]
+    # 增量去重：ID去重 + 时间去重（双保险防重复）
+    now_ts = int(time.time())
+    # 只推送最近30分钟内的新闻（超过30分钟的视为旧闻，不推送）
+    TIME_WINDOW = 30 * 60
+    new_items = []
+    for item in important_items:
+        news_id = item.get("id")
+        sort_time = int(item.get("sort_time", item.get("rec_time", "0")))
+        if news_id in pushed_ids:
+            continue
+        if (now_ts - sort_time) > TIME_WINDOW:
+            continue
+        new_items.append(item)
 
     if not new_items:
         print("  无新要闻，跳过推送")
