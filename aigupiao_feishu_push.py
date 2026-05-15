@@ -234,19 +234,16 @@ def build_feishu_card(news_item):
     # 格式化内容
     content = format_content_lines(content)
 
-    # 构建标题标记
-    tags = []
-    if is_app_push:
-        tags.append("🔔推送")
-    if is_important:
-        tags.append("★重要")
-    if is_24h_hot:
-        tags.append("🔥热门")
-    if theme:
-        tags.append(f"#{theme}")
+    # 提取【标题】作为卡片header
+    title_match = re.match(r'【(.+?)】', content)
+    if title_match:
+        news_title = f"【{title_match.group(1)}】"
+        # 从正文中去掉标题（避免重复显示）
+        content = re.sub(r'^【.+?】\s*', '', content).strip()
+    else:
+        news_title = ""
 
-    title_suffix = f" {' '.join(tags)}" if tags else ""
-    header_title = f"{rec_time_desc}{title_suffix}"
+    header_title = f"{rec_time_desc} {news_title}" if news_title else rec_time_desc
 
     # 卡片颜色：重要用红色，热门用橙色，普通用蓝色
     if is_important or is_app_push:
